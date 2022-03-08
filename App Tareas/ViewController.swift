@@ -6,9 +6,10 @@
 //
 
 import UIKit
+import CoreData
 
 class ViewController: UIViewController, UITableViewDataSource {
-    var tareas = [String]()
+    var tareas = [NSManagedObject]()
     @IBOutlet weak var TableView: UITableView!
     
     override func viewDidLoad() {
@@ -21,8 +22,9 @@ class ViewController: UIViewController, UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let celda = tableView.dequeueReusableCell(withIdentifier: "Celda")
-           celda!.textLabel!.text = tareas[indexPath.row]
-           return celda!
+        let tarea = tareas[indexPath.row]
+        celda!.textLabel!.text=tarea.value(forKey: "NombreTarea")as?String
+        return celda!
 
     }
     @IBAction func AñadeTarea(_ sender: Any) {
@@ -34,7 +36,7 @@ class ViewController: UIViewController, UITableViewDataSource {
                                           handler: {(action:UIAlertAction)-> Void in
             //Guardamos el texto del textField en el array tasks y recargamos la table view
             let CampoTexto = alerta.textFields!.first
-            self.tareas.append(CampoTexto!.text!)
+            self.guardarTarea(name:CampoTexto!.text!)
             self.TableView.reloadData()
         })
         
@@ -56,7 +58,38 @@ class ViewController: UIViewController, UITableViewDataSource {
         present(alerta, animated: true, completion: nil)
     }
     
+    func guardarTarea(nombreTarea: String){
+        //1
+        let appDelegate = UIApplication.shared.delegate as! AppDelegate
+        let managedContext = appDelegate.persistentContainer.viewContext
+        
+        //2
+        let entidad = NSEntityDescription.entity(forEntityName: "Tarea", in: managedContext)
+        let tarea = NSManagedObject(entity: entidad!, insertInto: managedContext)
+        
+        //3
+        tarea.setValue(nombreTarea, forKey: "nombreTarea")
+        
+        //4
+        do {
+             try managedContext.save()
+        //5
+             tareas.append(tarea)
+           } catch let error as NSError {
+             print("No ha sido posible guardar \(error), \(error.userInfo)")
+           }
+
+    }
     
+    override func viewWillAppear(_ animated: Bool) {
+        //1
+        let appDelegate = UIApplication.shared.delegate as! AppDelegate
+        let managedContext = appDelegate.persistentContainer.viewContext
+        
+        // 2
+        let fetchRequest : NSFetchRequest<Task> = tareas.fetchRequest()
+
+    }
 
 }
 
